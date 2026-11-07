@@ -97,3 +97,67 @@ export function bestCells(density: readonly number[], view: PublicBoardView): Co
   })
   return cells
 }
+
+/**
+ * Exact posterior: enumerate every joint arrangement of the remaining ships
+ * that is consistent with all shots (no overlap, no misses, every active hit
+ * covered) and count how often each unknown cell is occupied. Returns null when
+ * the search space exceeds `budget` leaves so callers can fall back to the
+ * per-ship approximation in `densityMap`.
+ */
+export function jointDensity(view: PublicBoardView, budget: number): number[] | null {
+  const sunkKeys = new Set(view.sunk.flatMap((s) => s.cells.map(coordKey)))
+  const hits = activeHits(view)
+  const hitIndexes = hits.map(toIndex)
+  const blocked = (c: Coord): boolean =>
+    view.shots[toIndex(c)] === 'miss' || sunkKeys.has(coordKey(c))
+
+  const perShip: number[][][] = []
+  let leaves = 1
+  for (const ship of view.remaining) {
+    const options: number[][] = []
+    for (let row = 0; row < BOARD_SIZE; row++) {
+      for (let col = 0; col < BOARD_SIZE; col++) {
+        for (const orientation of ['horizontal', 'vertical'] as const) {
+          const cells = shipCells({ row, col }, ship.length, orientation)
+          const last = cells[cells.length - 1]
+          if (!last || !isInBounds(last) || cells.some(blocked)) continue
+          options.push(cells.map(toIndex))
+        }
+      }
+    }
+    if (options.length === 0) return null
+    perShip.push(options)
+    leaves *= options.length
+    if (leaves > budget) return null
+  }
+  perShip.sort((a, b) => a.length - b.length)
+
+  const density = new Array<number>(BOARD_SIZE * BOARD_SIZE).fill(0)
+  const occupied = new Uint8Array(BOARD_SIZE * BOARD_SIZE)
+  const chosen: number[][] = []
+  let configurations = 0
+
+  const recurse = (depth: number): void => {
+    if (depth === perShip.length) {
+      if (hitIndexes.some((i) => occupied[i] === 0)) return
+      configurations++
+      for (const cells of chosen) for (const i of cells) density[i]! += 1
+      return
+    }
+    for (const cells of perShip[depth]!) {
+      if (cells.some((i) => occupied[i] === 1)) continue
+      for (const i of cells) occupied[i] = 1
+      chosen.push(cells)
+      recurse(depth + 1)
+      chosen.pop()
+      for (const i of cells) occupied[i] = 0
+    }
+  }
+  recurse(0)
+  if (configurations === 0) return null
+  for (let i = 0; i < density.length; i++) {
+    if (view.shots[i] !== 'unknown') density[i] = 0
+  }
+  return density
+}

@@ -11,6 +11,8 @@ npm run check      # lint, typecheck, format check, unit tests
 npm run build      # production build in dist/
 ```
 
+See [PLAN.md](PLAN.md) for the full build plan, AI rank design and architecture.
+
 ## Project layout
 
 - `src/engine/` — pure TypeScript game rules (board, placement, shots, state machine). No React or DOM imports, fully unit tested.
