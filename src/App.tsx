@@ -8,6 +8,10 @@ import BattleScreen from './app/components/BattleScreen'
 import PlacementScreen from './app/components/PlacementScreen'
 import TitleScreen from './app/components/TitleScreen'
 
+/** `?fast` in the URL removes the AI thinking delay (used by the e2e tests). */
+const FAST_AI =
+  typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('fast')
+
 export default function App() {
   const [state, dispatch] = useReducer(
     reducer,
@@ -39,7 +43,7 @@ export default function App() {
   useEffect(() => {
     if (screen !== 'battle' || !game || game.phase !== 'playing' || game.turn !== 'ai') return
     const [min, max] = AI_PROFILES[rank].thinkMs
-    const delay = min + Math.random() * (max - min)
+    const delay = FAST_AI ? 0 : min + Math.random() * (max - min)
     dispatch({ type: 'ai-thinking', thinking: true })
     const timer = setTimeout(() => {
       const board = game.boards.player

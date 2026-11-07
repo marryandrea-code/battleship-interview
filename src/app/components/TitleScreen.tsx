@@ -15,7 +15,7 @@ export default function TitleScreen({ rank, campaign, onSelectRank, onStart }: P
     <section className="rise-in mx-auto flex w-full max-w-5xl flex-col items-center gap-10 px-4 py-10">
       <header className="text-center">
         <p className="text-radar mb-2 text-xs tracking-[0.5em] uppercase">Naval Command</p>
-        <h1 className="title-glow text-6xl font-bold tracking-[0.2em] uppercase sm:text-7xl">
+        <h1 className="title-glow max-w-full text-[clamp(2.4rem,11vw,4.5rem)] font-bold tracking-[0.12em] uppercase sm:tracking-[0.2em]">
           Battleship
         </h1>
         <p className="text-mist mt-4 max-w-xl text-lg">
