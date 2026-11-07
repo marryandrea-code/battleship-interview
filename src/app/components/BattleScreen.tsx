@@ -10,6 +10,8 @@ import {
 } from '../../engine'
 import { AI_PROFILES, type AiRank } from '../../engine/ai'
 import type { LastShot, LogEntry } from '../state'
+import { nextRank, type MatchOutcome } from '../campaign'
+import Stars from './Stars'
 import Board from './Board'
 import FleetStatus from './FleetStatus'
 
@@ -19,8 +21,10 @@ interface Props {
   readonly log: readonly LogEntry[]
   readonly lastShot: LastShot | null
   readonly aiThinking: boolean
+  readonly outcome: MatchOutcome | null
   readonly onFire: (coord: Coord) => void
   readonly onRematch: () => void
+  readonly onNextRank: (rank: AiRank) => void
   readonly onChangeOpponent: () => void
 }
 
@@ -30,8 +34,10 @@ export default function BattleScreen({
   log,
   lastShot,
   aiThinking,
+  outcome,
   onFire,
   onRematch,
+  onNextRank,
   onChangeOpponent,
 }: Props) {
   const profile = AI_PROFILES[rank]
@@ -153,7 +159,9 @@ export default function BattleScreen({
           shots={playerShots}
           accuracy={accuracy}
           enemyShots={countShots(playerBoard)}
+          outcome={outcome}
           onRematch={onRematch}
+          onNextRank={onNextRank}
           onChangeOpponent={onChangeOpponent}
         />
       ) : null}
@@ -196,7 +204,9 @@ function GameOver({
   shots,
   accuracy,
   enemyShots,
+  outcome,
   onRematch,
+  onNextRank,
   onChangeOpponent,
 }: {
   won: boolean
@@ -204,10 +214,14 @@ function GameOver({
   shots: number
   accuracy: number
   enemyShots: number
+  outcome: MatchOutcome | null
   onRematch: () => void
+  onNextRank: (rank: AiRank) => void
   onChangeOpponent: () => void
 }) {
   const profile = AI_PROFILES[rank]
+  const next = nextRank(rank)
+  const nextUnlocked = next ? (outcome?.campaign.records[rank].wins ?? 0) : 0
   const primaryRef = useRef<HTMLButtonElement>(null)
   useEffect(() => {
     primaryRef.current?.focus()
@@ -236,8 +250,41 @@ function GameOver({
             ? `You sank ${profile.name}'s fleet in ${shots} shots (${accuracy}% accuracy). ${profile.name} got off ${enemyShots} shots.`
             : `${profile.name} found your last ship in ${enemyShots} shots. You fired ${shots} (${accuracy}% accuracy).`}
         </p>
+        {won && outcome ? (
+          <div className="mt-5 flex flex-col items-center gap-1">
+            <Stars count={outcome.stars} size="lg" />
+            <p className="text-mist font-mono text-xs tracking-widest uppercase">
+              {outcome.newBest
+                ? 'New personal best'
+                : `Best: ${outcome.campaign.records[rank].bestShots} shots`}
+              {outcome.stars < 3
+                ? ` · ${outcome.stars === 2 ? '45' : '60'} or fewer for ${outcome.stars + 1} stars`
+                : ''}
+            </p>
+            {outcome.unlocked ? (
+              <p className="text-radar mt-2 font-semibold">
+                {AI_PROFILES[outcome.unlocked].name} unlocked!
+              </p>
+            ) : null}
+          </div>
+        ) : null}
         <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:justify-center">
-          <button ref={primaryRef} type="button" className="btn btn-primary" onClick={onRematch}>
+          {won && next && nextUnlocked > 0 ? (
+            <button
+              ref={primaryRef}
+              type="button"
+              className="btn btn-primary"
+              onClick={() => onNextRank(next)}
+            >
+              Next: {AI_PROFILES[next].name}
+            </button>
+          ) : null}
+          <button
+            ref={won && next && nextUnlocked > 0 ? undefined : primaryRef}
+            type="button"
+            className={`btn ${won && next && nextUnlocked > 0 ? 'btn-ghost' : 'btn-primary'}`}
+            onClick={onRematch}
+          >
             Rematch
           </button>
           <button type="button" className="btn btn-ghost" onClick={onChangeOpponent}>

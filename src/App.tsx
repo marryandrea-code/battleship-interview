@@ -1,26 +1,39 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { createRng, publicView, randomFleet, randomSeed, type Coord, type Rng } from './engine'
-import { AI_PROFILES, getStrategy } from './engine/ai'
+import { AI_PROFILES, getStrategy, type AiRank } from './engine/ai'
 import { synth } from './app/audio'
 import { initialState, reducer } from './app/state'
+import { loadCampaign, saveCampaign } from './app/campaign'
 import BattleScreen from './app/components/BattleScreen'
 import PlacementScreen from './app/components/PlacementScreen'
 import TitleScreen from './app/components/TitleScreen'
 
 export default function App() {
-  const [state, dispatch] = useReducer(reducer, synth.muted, initialState)
+  const [state, dispatch] = useReducer(
+    reducer,
+    { muted: synth.muted, campaign: loadCampaign() },
+    initialState,
+  )
   const rngRef = useRef<Rng>(createRng(randomSeed()))
   const [announcement, setAnnouncement] = useState('')
 
-  const { screen, rank, game, lastShot, log } = state
+  const { screen, rank, game, lastShot, log, campaign } = state
+
+  useEffect(() => {
+    saveCampaign(campaign)
+  }, [campaign])
   const rotate = useCallback(() => dispatch({ type: 'rotate' }), [])
 
-  const startMatch = useCallback(() => {
-    rngRef.current = createRng(randomSeed())
-    const aiFleet = getStrategy(rank).placeFleet(rngRef.current)
-    dispatch({ type: 'start-placement', aiFleet })
-    synth.play('click')
-  }, [rank])
+  const startMatch = useCallback(
+    (against: AiRank = rank) => {
+      rngRef.current = createRng(randomSeed())
+      if (against !== rank) dispatch({ type: 'select-rank', rank: against })
+      const aiFleet = getStrategy(against).placeFleet(rngRef.current)
+      dispatch({ type: 'start-placement', aiFleet })
+      synth.play('click')
+    },
+    [rank],
+  )
 
   // AI turn: wait a human-feeling moment, then fire using only the public view.
   useEffect(() => {
@@ -87,11 +100,12 @@ export default function App() {
         {screen === 'title' ? (
           <TitleScreen
             rank={rank}
+            campaign={campaign}
             onSelectRank={(r) => {
               dispatch({ type: 'select-rank', rank: r })
               synth.play('click')
             }}
-            onStart={startMatch}
+            onStart={() => startMatch()}
           />
         ) : null}
 
@@ -134,7 +148,9 @@ export default function App() {
               synth.play('fire')
               dispatch({ type: 'fire', by: 'player', coord })
             }}
-            onRematch={startMatch}
+            outcome={state.outcome}
+            onRematch={() => startMatch()}
+            onNextRank={(r) => startMatch(r)}
             onChangeOpponent={() => dispatch({ type: 'to-title' })}
           />
         ) : null}
