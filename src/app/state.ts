@@ -4,6 +4,7 @@ import {
   coordLabel,
   createGame,
   placeShip,
+  shotsBy,
   startGame,
   takeShot,
   type Coord,
@@ -16,6 +17,7 @@ import {
   type ShotResult,
 } from '../engine'
 import { AI_PROFILES, type AiRank } from '../engine/ai'
+import { recordMatch, type Campaign, type MatchOutcome } from './campaign'
 
 export type Screen = 'title' | 'placing' | 'battle'
 
@@ -46,6 +48,9 @@ export interface AppState {
   readonly lastShot: LastShot | null
   readonly aiThinking: boolean
   readonly muted: boolean
+  readonly campaign: Campaign
+  /** Set when the current match finished; stars, unlocks, new best. */
+  readonly outcome: MatchOutcome | null
 }
 
 export type Action =
@@ -63,8 +68,16 @@ export type Action =
   | { type: 'to-title' }
   | { type: 'set-muted'; muted: boolean }
 
-export function initialState(muted: boolean): AppState {
+export function initialState({
+  muted,
+  campaign,
+}: {
+  muted: boolean
+  campaign: Campaign
+}): AppState {
   return {
+    campaign,
+    outcome: null,
     screen: 'title',
     rank: 'ensign',
     matchId: 0,
@@ -121,6 +134,7 @@ export function reducer(state: AppState, action: Action): AppState {
         log: [],
         lastShot: null,
         aiThinking: false,
+        outcome: null,
       }
 
     case 'select-ship':
@@ -194,8 +208,12 @@ export function reducer(state: AppState, action: Action): AppState {
       if (!event) return state
       const entry = describeShot(state, action.by, action.coord, event.result)
       const log = [...state.log, entry]
+      let outcome = state.outcome
+      let campaign = state.campaign
       if (next.phase === 'finished') {
         const won = next.winner === 'player'
+        outcome = recordMatch(state.campaign, state.rank, won, shotsBy(next, 'player'))
+        campaign = outcome.campaign
         log.push({
           id: log.length + 1,
           by: next.winner ?? 'player',
@@ -209,6 +227,8 @@ export function reducer(state: AppState, action: Action): AppState {
         ...state,
         game: next,
         log,
+        campaign,
+        outcome,
         aiThinking: false,
         lastShot: {
           id: next.history.length,
