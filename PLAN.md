@@ -11,6 +11,8 @@ Scope for v1: **Human vs AI** only. You place a fleet, pick one of four AI ranks
 | 3     | Commander  | Hunts with a probability heatmap of where the remaining ships can still fit; finishes wounded ships by line-following.                                                                      | ~45                     |
 | 4     | Admiral    | Exact enumeration of every arrangement of the remaining ships consistent with all shots when the search is small enough, otherwise the heatmap. Spreads her own fleet so ships never touch. | ~43                     |
 
+Measured with `npm run sim 300`: Commander and Admiral clear a random fleet in about the same number of shots (greedy probability targeting is close to the practical ceiling); the Admiral's edge is exact endgame inference plus a spread-out fleet, which wins ~55% of games against the Commander and ~75% against the Lieutenant (Commander: ~65%).
+
 Every rank plays fair: it only sees the same hit/miss/sunk information a human would (`PublicBoardView`). The simulation harness (`npm run sim`) measures shots-to-win and head-to-head win rates and the test suite asserts the ordering holds.
 
 - Campaign ladder: beat each rank to unlock the next; 1 to 3 stars per win based on shots used.

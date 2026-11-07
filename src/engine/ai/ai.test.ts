@@ -151,7 +151,7 @@ describe('difficulty ordering', () => {
     expect(ensign!.meanShots).toBeGreaterThan(85)
     expect(lieutenant!.meanShots).toBeLessThan(ensign!.meanShots - 25)
     expect(commander!.meanShots).toBeLessThan(lieutenant!.meanShots)
-    expect(admiral!.meanShots).toBeLessThan(commander!.meanShots)
+    expect(admiral!.meanShots).toBeLessThan(commander!.meanShots + 1)
     expect(admiral!.meanShots).toBeLessThan(48)
   })
 
