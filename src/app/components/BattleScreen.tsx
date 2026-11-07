@@ -92,9 +92,9 @@ export default function BattleScreen({
         </p>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_auto_1fr]">
-        <div className="flex flex-col items-center gap-3">
-          <h2 className="text-radar text-sm font-semibold tracking-[0.3em] uppercase">
+      <div className="battle-grid grid gap-6 lg:grid-cols-[1fr_minmax(0,16rem)_1fr]">
+        <div className="flex w-fit flex-col gap-3 justify-self-center">
+          <h2 className="text-radar text-center text-sm font-semibold tracking-[0.3em] uppercase">
             Enemy waters
           </h2>
           <div
@@ -129,8 +129,8 @@ export default function BattleScreen({
           <BattleLog log={log} />
         </div>
 
-        <div className="flex flex-col items-center gap-3">
-          <h2 className="text-mist text-sm font-semibold tracking-[0.3em] uppercase">
+        <div className="flex w-fit flex-col gap-3 justify-self-center">
+          <h2 className="text-mist text-center text-sm font-semibold tracking-[0.3em] uppercase">
             Your waters
           </h2>
           <div key={shakeKey} className={`panel rounded-xl p-3 ${shakeKey ? 'shake' : ''}`}>
@@ -233,9 +233,7 @@ function GameOver({
         </h2>
         <p className="text-foam/80 mt-4">
           {won
-            ? `You sank ${profile.name}'s fleet in ${shots} shots (${accuracy}% accuracy). ${
-                enemyShots > 0 ? `She needed ${enemyShots} and did not finish.` : ''
-              }`
+            ? `You sank ${profile.name}'s fleet in ${shots} shots (${accuracy}% accuracy). ${profile.name} got off ${enemyShots} shots.`
             : `${profile.name} found your last ship in ${enemyShots} shots. You fired ${shots} (${accuracy}% accuracy).`}
         </p>
         <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:justify-center">

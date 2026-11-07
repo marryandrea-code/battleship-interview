@@ -94,11 +94,11 @@ export default function PlacementScreen({
 
   return (
     <section className="rise-in mx-auto grid w-full max-w-6xl gap-8 px-4 py-8 lg:grid-cols-[auto_1fr]">
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex w-fit flex-col items-center gap-4 justify-self-center">
         <h1 className="text-center text-3xl font-bold tracking-widest uppercase">
           Position your fleet
         </h1>
-        <p className="text-mist text-center text-sm">
+        <p className="text-mist max-w-md text-center text-sm">
           {selectedSpec
             ? `Placing the ${selectedSpec.name} (${selectedSpec.length} cells, ${orientation}). Click or press Enter on a cell for its bow. Press R to rotate.`
             : complete
